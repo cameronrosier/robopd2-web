@@ -1,0 +1,18 @@
+<template>
+  <v-app>
+    <v-main>
+      <router-view />
+    </v-main>
+  </v-app>
+</template>
+
+<script setup>
+  //
+</script>
+
+<style>
+@font-face {
+  font-family: exocet;
+  src: url('@/assets/Exocet Heavy.ttf');
+}
+</style>
