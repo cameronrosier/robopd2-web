@@ -9,52 +9,33 @@ on:
       - main
 
 env:
-  # Configure these variables in your GitHub repository secrets
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
   DOCKER_REGISTRY: docker.io
   APP_NAME: robopd2-web
 
 jobs:
   build:
-    runs-on: robopd2-runners
-    steps:
-      - uses: actions/checkout@v4
-      
-      # Kaniko Authentication
-      - name: Create Docker Config Secret
+    runs-on: robopd2-runners  # Your self-hosted Kubernetes runners
+    container:
+      image: gcr.io/kaniko-project/executor:v1.19.0-debug  # Lightweight debug image
+    steps:      
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Push Image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          mkdir -p /kaniko/.docker
-          echo "{\"auths\":{\"${{ env.DOCKER_REGISTRY }}\":{\"username\":\"${{ env.DOCKER_USERNAME }}\",\"password\":\"${{ env.DOCKER_PASSWORD }}\"}}}" > /kaniko/.docker/config.json
-      
-      # Determine image tags dynamically
-      - name: Generate Image Tags
-        id: image-tags
-        run: |
-          TAGS="${{ env.DOCKER_REGISTRY }}/${{ env.APP_NAME }}:${{ github.sha }}"
+          # Create docker config for authentication
+          echo "{\"auths\":{\"${{ env.DOCKER_REGISTRY }}\":{\"username\":\"$DOCKER_USERNAME\",\"password\":\"$DOCKER_PASSWORD\"}}}" > /kaniko/.docker/config.json
           
-          # Add additional tags for branch and PR
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            TAGS="${TAGS},${{ env.DOCKER_REGISTRY }}/${{ env.APP_NAME }}:latest"
-          fi
-          
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            TAGS="${TAGS},${{ env.DOCKER_REGISTRY }}/${{ env.APP_NAME }}:pr-${{ github.event.pull_request.number }}"
-          fi
-          
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-      
-      # Build and Push with Kaniko
-      - name: Build and Push with Kaniko
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.image-tags.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-  
+          # Build and push image
+          /kaniko/executor \
+            --context=${{ github.workspace }} \
+            --dockerfile=${{ github.workspace }}/Dockerfile \
+            --destination=${{ env.DOCKER_REGISTRY }}/${{ env.APP_NAME }}:${{ github.sha }} \
+            --cache=true
+
   deploy-production:
     needs: build
     if: github.ref == 'refs/heads/main'
@@ -79,13 +60,3 @@ jobs:
             --set image.tag=${{ github.sha }} \
             --set ingress.hosts[0].host=${{ env.APP_NAME }}.yourdomain.com \
             --set replicaCount=3
-      
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.sha }}
-          release_name: Release ${{ github.sha }}
-          draft: false
-          prerelease: false
