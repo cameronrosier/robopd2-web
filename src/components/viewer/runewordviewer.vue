@@ -14,15 +14,28 @@
         ></v-img>
       </v-col>
       <v-col cols="2">
-        <v-btn
-          icon
-          variant="text"
-          class="position-absolute top-0 end-0 ma-2"
-          style="z-index: 1;"
-          @click="handleReportClick"
-        >
-          <v-icon color="red">mdi-exclamation</v-icon>
-        </v-btn>
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn
+              icon
+              variant="text"
+              class="position-absolute top-0 end-0 ma-2"
+              style="z-index: 1;"
+              v-bind="props"
+            >
+              <v-icon color="red">mdi-exclamation</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item
+              v-for="(reportType, index) in reportTypes"
+              :key="index"
+              @click="handleReportClick(reportType)"
+            >
+              <v-list-item-title>{{ reportType }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-col>
     </v-row>
 
@@ -37,14 +50,28 @@
         <v-card-subtitle class="pa-0">{{ itemBaseName }}</v-card-subtitle>
       </v-col>
       <v-col cols="auto" class="pl-1 self-start">
-        <v-btn
-          icon="mdi-menu-down-outline"
-          size="x-small"
-          color="white"
-          variant="text"
-          density="compact"
-          class="mt-n1"
-        />
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn
+              v-bind="props"
+              icon="mdi-menu-down-outline"
+              size="x-small"
+              color="white"
+              variant="text"
+              density="compact"
+              class="mt-n1"
+            />
+          </template>
+          <v-list>
+            <v-list-item
+              v-for="base in sortedItemBases"
+              :key="base"
+              @click="selectBase(base)"
+            >
+              <v-list-item-title>{{ base }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-col>
     </v-row>
 
@@ -72,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import { shuffleArray } from '@/util/util'
 import { useRunewordViewerStore } from '@/stores/runewordViewer';
@@ -86,11 +113,45 @@ const itemBases = computed(() => runewordViewer.value.itemBases)
 const itemRunes = computed(() => runewordViewer.value.itemRunes)
 const itemPropertyStrings = computed(() => runewordViewer.value.itemPropertyStrings)
 
-var itemBaseName = ref('')
+// Computed property to get sorted bases alphabetically
+const sortedItemBases = computed(() => {
+  return [...itemBases.value].sort((a, b) => a.localeCompare(b))
+})
+
+// Report types
+const reportTypes = [
+  'Report Missing Stats',
+  'Report Other'
+]
+
+const itemBaseName = ref('')
 const imageUrl = ref(null)
 
-const handleReportClick = () => {
-  // Implement your report functionality here
+const handleReportClick = (reportType) => {
+  switch(reportType) {
+    case 'Report Incorrect Stats':
+      break
+    case 'Report Other':
+      break
+  }
+}
+
+const selectBase = (base) => {
+  itemBaseName.value = base
+
+  // Optional: You might want to update the image or trigger some other action
+  // when a new base is selected
+  updateImageForBase(base)
+}
+
+const updateImageForBase = async (base) => {
+  try {
+    const baseImageName = base.replaceAll(' ', '_')
+    const imageModule = await import(`@/assets/items/${baseImageName}.png`)
+    imageUrl.value = imageModule.default
+  } catch (error) {
+    console.error('Error loading image for base:', base, error)
+  }
 }
 
 watchEffect(async () => {

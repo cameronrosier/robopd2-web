@@ -6,6 +6,7 @@ export const useUniqueViewerStore = defineStore('uniqueViewer', {
       itemName: '',
       itemType: '',
       itemBase: '',
+      itemMaxSockets: 0,
       itemProperties: [],
       itemPropertyStrings: []
     }
@@ -21,6 +22,7 @@ export const useUniqueViewerStore = defineStore('uniqueViewer', {
         itemName: '',
         itemType: '',
         itemBase: '',
+        itemMaxSockets: 0,
         itemProperties: [],
         itemPropertyStrings: []
       }

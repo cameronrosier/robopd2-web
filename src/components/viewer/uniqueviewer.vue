@@ -35,7 +35,7 @@
     <v-card-subtitle
       class="text-center"
     >
-      {{ itemBase }}
+      {{ itemBase }} ({{ itemMaxSockets }})
     </v-card-subtitle>
 
     <v-card-actions class="justify-center">
@@ -66,6 +66,7 @@ const { viewer: uniqueViewer } = storeToRefs(uniqueViewerStore)
 // Use computed properties to access store values
 const itemName = computed(() => uniqueViewer.value.itemName)
 const itemBase = computed(() => uniqueViewer.value.itemBase)
+const itemMaxSockets = computed(() => uniqueViewer.value.itemMaxSockets)
 const itemPropertyStrings = computed(() => uniqueViewer.value.itemPropertyStrings)
 
 const imageUrl = ref(null)

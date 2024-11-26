@@ -73,6 +73,7 @@ const fetchData = async () => {
         itemName: response.item_data.name,
         itemType: response.item_type,
         itemBase: response.item_data.base,
+        itemMaxSockets: response.item_data.max_sockets,
         itemProperties: [...response.item_data.properties],
         itemPropertyStrings: [...processResistanceProperties(response.item_data.property_strings)].filter(
           function (value, index, array) {
