@@ -15,28 +15,18 @@ env:
 jobs:
   build:
     runs-on: robopd2-runners
-    container: 
-      image: gcr.io/kaniko-project/executor:v1.19.0-debug
-    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Build and Push Image
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v4
+      
+      - name: Build with Kaniko
         run: |
-          # Create docker config for authentication
-          mkdir -p /kaniko/.docker
-          echo "{\"auths\":{\"${{ env.DOCKER_REGISTRY }}\":{\"username\":\"$DOCKER_USERNAME\",\"password\":\"$DOCKER_PASSWORD\"}}}" > /kaniko/.docker/config.json
-          
-          # Build and push image
+          # Ensure Kaniko is installed on your runners
           /kaniko/executor \
-            --context=/github/workspace \
-            --dockerfile=/github/workspace/Dockerfile \
-            --destination=${{ env.DOCKER_REGISTRY }}/${{ env.APP_NAME }}:${{ github.sha }} \
-            --cache=true
+            --context=$GITHUB_WORKSPACE \
+            --dockerfile=$GITHUB_WORKSPACE/Dockerfile \
+            --destination=docker.io/youruser/yourimage:${{ github.sha }} \
+            --no-push \
+            --tarPath=image.tar
   
   deploy-production:
     needs: build
