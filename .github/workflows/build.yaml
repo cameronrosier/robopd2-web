@@ -14,10 +14,11 @@ env:
 
 jobs:
   build:
-    runs-on: robopd2-runners  # Your self-hosted Kubernetes runners
-    container:
-      image: gcr.io/kaniko-project/executor:v1.19.0-debug  # Lightweight debug image
-    steps:      
+    runs-on: robopd2-runners
+    container: 
+      image: gcr.io/kaniko-project/executor:v1.19.0-debug
+    
+    steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -27,15 +28,16 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           # Create docker config for authentication
+          mkdir -p /kaniko/.docker
           echo "{\"auths\":{\"${{ env.DOCKER_REGISTRY }}\":{\"username\":\"$DOCKER_USERNAME\",\"password\":\"$DOCKER_PASSWORD\"}}}" > /kaniko/.docker/config.json
           
           # Build and push image
           /kaniko/executor \
-            --context=${{ github.workspace }} \
-            --dockerfile=${{ github.workspace }}/Dockerfile \
+            --context=/github/workspace \
+            --dockerfile=/github/workspace/Dockerfile \
             --destination=${{ env.DOCKER_REGISTRY }}/${{ env.APP_NAME }}:${{ github.sha }} \
             --cache=true
-
+  
   deploy-production:
     needs: build
     if: github.ref == 'refs/heads/main'
