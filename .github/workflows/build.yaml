@@ -11,10 +11,13 @@ on:
 env:
   DOCKER_REGISTRY: docker.io
   APP_NAME: robopd2-web
+  KANIKO_CACHE_ARGS: "--cache=true --cache-copy-layers=true --cache-ttl=24h"
 
 jobs:
   build:
     runs-on: robopd2-runners
+    container:
+        image: gcr.io/kaniko-project/executor:v1.20.0-debug
     steps:
       - uses: actions/checkout@v4
       
