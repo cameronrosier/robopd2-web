@@ -1,4 +1,4 @@
-name: Build with kaniko
+name: RoboPD2 Web CI/CD Pipeline
 
 on:
   push:
