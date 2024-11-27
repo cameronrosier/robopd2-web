@@ -1,83 +1,31 @@
-name: RoboPD2 Web CI/CD Pipeline
+name: Docker Image Build with Kaniko
 
 on:
   push:
-    branches: 
-      - main
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - main
-
-env:
-  DOCKER_REGISTRY: docker.io
-  APP_NAME: robopd2-web
-  KANIKO_CACHE_ARGS: "--cache=true --cache-copy-layers=true --cache-ttl=24h"
-  IMAGE_NAME: "robopd2/robopd2-web"
-  GH_REGISTRY: "ghcr.io"
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-and-push:
+    # Specify the custom runner label
     runs-on: robopd2-runners
-    container:
-      image: gcr.io/kaniko-project/executor:v1.20.0-debug
     
     steps:
-      - name: Diagnose Runner
-        run: |
-          echo "Debugging Runner Configuration"
-          pwd
-          ls -la
-          env | grep -E "RUNNER|GITHUB"
-
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Build Docker Image
-        run: |
-          # Simplified Kaniko build process
-          mkdir -p /kaniko/.docker
-          cat <<EOF > /kaniko/.docker/config.json
-          {
-              "auths": {
-                  "ghcr.io": {
-                      "auth": "$(echo -n "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | base64 -w0)"
-                  }
-              }
-          }
-          EOF
-
-          /kaniko/executor \
-              --dockerfile=./Dockerfile \
-              --context=. \
-              --destination="${GH_REGISTRY}/${IMAGE_NAME}:${GITHUB_SHA::7}" \
-              --cache=true \
-              --cache-copy-layers=true \
-              --cache-ttl=24h \
-              --push-retry 5
-
-  deploy-production:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: robopd2-runners
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-        
-      - name: Setup Kubernetes
-        uses: azure/k8s-set-context@v3
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG }}
-      
-      - name: Deploy to Production
-        run: |
-          helm upgrade --install ${{ env.APP_NAME }}-production ./helm \
-            --namespace production \
-            --create-namespace \
-            --set image.tag=${{ github.sha }} \
-            --set ingress.hosts[0].host=${{ env.APP_NAME }}.yourdomain.com \
-            --set replicaCount=3
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Build and Push with Kaniko
+      uses: addnab/docker-run-action@v3
+      with:
+        image: gcr.io/kaniko-project/executor:latest
+        options: >
+          -v ${{ github.workspace }}:/workspace
+          -v /kaniko/.docker/config.json:/kaniko/.docker/config.json
+        run: >
+          /kaniko/executor 
+          --context=/workspace 
+          --dockerfile=/workspace/Dockerfile 
+          --destination=${{ secrets.DOCKERHUB_USERNAME }}/robopd2-web:latest
+          --destination=${{ secrets.DOCKERHUB_USERNAME }}/robopd2-web:${{ github.sha }}
