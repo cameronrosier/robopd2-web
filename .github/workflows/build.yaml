@@ -22,16 +22,19 @@ jobs:
         contents: read # read the repository
 
       steps:
-        - uses: actions/checkout@v4
+        - name: Checkout code
+          uses: actions/checkout@v4
 
         - name: Build and Push Image With Kaniko
           run: |
             ls -la
             cat <<EOF > /kaniko/.docker/config.json
+            mkdir -p /kaniko/.docker
+            cat <<EOF > /kaniko/.docker/config.json
             {
                 "auths": {
                     "ghcr.io": {
-                        "auth": "$(echo -n "$GIT_USERNAME:$GIT_PASSWORD" | base64 -w0)"
+                        "auth": "$(echo -n "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | base64 -w0)"
                     }
                 }
             }
