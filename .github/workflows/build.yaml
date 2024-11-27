@@ -34,7 +34,7 @@ jobs:
           EOF
 
           /kaniko/executor \
-            --context="git://github.com/cameronrosier/robopd2-web.git#${{ github.ref }}#${{ github.sha }}"  \
+            --context="git://github.com/cameronrosier/robopd2-web.git#refs/heads/${{ github.ref_name }}#${{ github.sha }}" \
             --destination="$DOCKER_IMAGE_NAME:$(echo ${GITHUB_SHA} | head  -c 7)" \
             ${{ env.KANIKO_CACHE_ARGS }} \
             --push-retry 5 
