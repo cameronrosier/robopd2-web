@@ -33,6 +33,8 @@ jobs:
           }
           EOF
 
+          echo "${{ env.GIT_URL }}"
+
           /kaniko/executor \
             --context="git://github.com/cameronrosier/robopd2-web.git#refs/heads/${{ github.ref_name }}#${{ github.sha }}" \
             --destination="$DOCKER_IMAGE_NAME:$(echo ${GITHUB_SHA} | head  -c 7)" \
@@ -41,4 +43,5 @@ jobs:
         env: 
           GIT_USERNAME: ${{ github.actor }}
           GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          GIT_URL: "git://github.com/cameronrosier/robopd2-web.git#refs/heads/${{ github.ref_name }}#${{ github.sha }}"
           DOCKER_IMAGE_NAME: "robopd2/robopd2-web"
