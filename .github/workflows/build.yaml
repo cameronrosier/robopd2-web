@@ -20,35 +20,32 @@ jobs:
           image: gcr.io/kaniko-project/executor:v1.20.0-debug
         
         steps:
-          - name: Debug Runner Environment
+          - name: Comprehensive Environment Check
             run: |
-              # Check basic system info
+              # Detailed system and environment diagnostics
+              echo "System Information:"
               uname -a
+              echo "\nCurrent Working Directory:"
               pwd
-              ls -la /home/runner
-              ls -la /__e
-              which node
-              node --version || echo "Node not found"
+              echo "\nDirectory Contents:"
+              ls -la
+              echo "\nEnvironment Variables:"
+              env
               
-          - name: Checkout code
+          - name: Checkout Repository
             uses: actions/checkout@v4
             with:
-              # Explicitly specify fetch depth if needed
               fetch-depth: 1
       
-          - name: Setup Node
-            uses: actions/setup-node@v4
-            with:
-              node-version: '20'
-      
-          - name: Verify Node Setup
+          - name: Prepare Build Environment
             run: |
-              node --version
-              npm --version
+              # Create necessary directories if they don't exist
+              mkdir -p /github/home
+              mkdir -p /home/runner
       
           - name: Build and Push Image
             run: |
-              # Your existing Kaniko build steps
+              # Docker authentication
               mkdir -p /kaniko/.docker
               cat <<EOF > /kaniko/.docker/config.json
               {
