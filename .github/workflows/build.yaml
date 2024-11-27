@@ -24,6 +24,7 @@ jobs:
       steps:
         - name: Build and Push Image to GHCR with kaniko
           run: |
+            ls -la
             cat <<EOF > /kaniko/.docker/config.json
             {
                 "auths": {
