@@ -27,23 +27,23 @@ jobs:
             cat <<EOF > /kaniko/.docker/config.json
             {
                 "auths": {
-                "ghcr.io": {
-                    "auth": "$(echo -n "$GIT_USERNAME:$GIT_PASSWORD" | base64 -w0)"
-                }
+                    "ghcr.io": {
+                        "auth": "$(echo -n "$GIT_USERNAME:$GIT_PASSWORD" | base64 -w0)"
+                    }
                 }
             }
             EOF
 
-            /kaniko/executor --dockerfile="./app/Dockerfile" \
+            /kaniko/executor --dockerfile="./Dockerfile" \
                 --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}"  \
                 --destination="$GH_REGISTRY/$IMAGE_NAME:$(echo ${GITHUB_SHA} | head  -c 7)" \
                 ${{ env.KANIKO_CACHE_ARGS }} \
                 --push-retry 5 
-            env: # needed to authenticate to github and download the repo
+          env: # needed to authenticate to github and download the repo
             GIT_USERNAME: ${{ github.actor }} 
             GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
             GH_REGISTRY: "ghcr.io"
-            IMAGE_NAME: "${{ github.repository }}/nginx"
+            IMAGE_NAME: "robopd2/robopd2-web"
   
     deploy-production:
       needs: build
