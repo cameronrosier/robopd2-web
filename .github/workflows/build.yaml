@@ -15,42 +15,62 @@ env:
 
 jobs:
     build:
-      runs-on: robopd2-runners # uses self-hosted runner scale set
-      container:
-        image: gcr.io/kaniko-project/executor:v1.20.0-debug # the kaniko image
-      permissions:
-        contents: read # read the repository
-
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
-
-        - name: Build and Push Image With Kaniko
-          run: |
-            ls -la
-            cat <<EOF > /kaniko/.docker/config.json
-            mkdir -p /kaniko/.docker
-            cat <<EOF > /kaniko/.docker/config.json
-            {
-                "auths": {
-                    "ghcr.io": {
-                        "auth": "$(echo -n "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | base64 -w0)"
-                    }
-                }
-            }
-            EOF
-
-            /kaniko/executor \
-                --dockerfile=./Dockerfile \
-                --context=.  \
-                --destination="$DOCKER_REGISTRY/$IMAGE_NAME:${GITHUB_SHA::7}" \
-                ${{ env.KANIKO_CACHE_ARGS }} \
-                --push-retry 5 
-          env: # needed to authenticate to github and download the repo
-            GIT_USERNAME: ${{ github.actor }} 
-            GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-            GH_REGISTRY: "ghcr.io"
-            IMAGE_NAME: "robopd2/robopd2-web"
+        runs-on: robopd2-runners
+        container:
+          image: gcr.io/kaniko-project/executor:v1.20.0-debug
+        
+        steps:
+          - name: Debug Runner Environment
+            run: |
+              # Check basic system info
+              uname -a
+              pwd
+              ls -la /home/runner
+              ls -la /__e
+              which node
+              node --version || echo "Node not found"
+              
+          - name: Checkout code
+            uses: actions/checkout@v4
+            with:
+              # Explicitly specify fetch depth if needed
+              fetch-depth: 1
+      
+          - name: Setup Node
+            uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+      
+          - name: Verify Node Setup
+            run: |
+              node --version
+              npm --version
+      
+          - name: Build and Push Image
+            run: |
+              # Your existing Kaniko build steps
+              mkdir -p /kaniko/.docker
+              cat <<EOF > /kaniko/.docker/config.json
+              {
+                  "auths": {
+                      "ghcr.io": {
+                          "auth": "$(echo -n "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | base64 -w0)"
+                      }
+                  }
+              }
+              EOF
+      
+              /kaniko/executor \
+                  --dockerfile=./Dockerfile \
+                  --context=. \
+                  --destination="ghcr.io/$IMAGE_NAME:${GITHUB_SHA::7}" \
+                  ${{ env.KANIKO_CACHE_ARGS }} \
+                  --push-retry 5
+            env:
+              IMAGE_NAME: "robopd2/robopd2-web"
+              GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+              GH_REGISTRY: "ghcr.io"
+              GIT_USERNAME: ${{ github.actor }}
   
     deploy-production:
       needs: build
