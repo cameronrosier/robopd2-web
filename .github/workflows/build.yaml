@@ -2,10 +2,11 @@ name: RoboPD2 Web CI/CD Pipeline
 
 on:
   push:
-    branches: [ "*" ]
-    paths:
-      - "app/**"
-      - ".github/workflows/build-with-kaniko.yml"
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
