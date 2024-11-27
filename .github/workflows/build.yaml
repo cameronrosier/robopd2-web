@@ -43,5 +43,5 @@ jobs:
         env: 
           GIT_USERNAME: ${{ github.actor }}
           GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          GIT_URL: "git://github.com/cameronrosier/robopd2-web.git#refs/heads/${{ github.ref_name }}#${{ github.sha }}"
+          GIT_URL: "${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}"
           DOCKER_IMAGE_NAME: "robopd2/robopd2-web"
