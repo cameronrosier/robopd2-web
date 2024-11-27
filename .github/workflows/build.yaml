@@ -36,7 +36,7 @@ jobs:
           echo "${{ env.GIT_URL }}"
 
           /kaniko/executor \
-            --context="git://github.com/cameronrosier/robopd2-web.git#refs/heads/${{ github.ref_name }}#${{ github.sha }}" \
+            --context="${{ env.GIT_URL }}" \
             --destination="$DOCKER_IMAGE_NAME:$(echo ${GITHUB_SHA} | head  -c 7)" \
             ${{ env.KANIKO_CACHE_ARGS }} \
             --push-retry 5 
