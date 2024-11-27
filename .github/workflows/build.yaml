@@ -1,5 +1,3 @@
-# build-with-kaniko.yml
-
 name: Build with kaniko
 
 on:
@@ -8,8 +6,6 @@ on:
     paths:
       - "app/**"
       - ".github/workflows/build-with-kaniko.yml"
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 env:
