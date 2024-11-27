@@ -12,68 +12,56 @@ env:
   DOCKER_REGISTRY: docker.io
   APP_NAME: robopd2-web
   KANIKO_CACHE_ARGS: "--cache=true --cache-copy-layers=true --cache-ttl=24h"
+  IMAGE_NAME: "robopd2/robopd2-web"
+  GH_REGISTRY: "ghcr.io"
 
 jobs:
-    build:
-        runs-on: robopd2-runners
-        container:
-          image: gcr.io/kaniko-project/executor:v1.20.0-debug
-        
-        steps:
-          - name: Comprehensive Environment Check
-            run: |
-              # Detailed system and environment diagnostics
-              echo "System Information:"
-              uname -a
-              echo "\nCurrent Working Directory:"
-              pwd
-              echo "\nDirectory Contents:"
-              ls -la
-              echo "\nEnvironment Variables:"
-              env
-              
-          - name: Checkout Repository
-            uses: actions/checkout@v4
-            with:
-              fetch-depth: 1
-      
-          - name: Prepare Build Environment
-            run: |
-              # Create necessary directories if they don't exist
-              mkdir -p /github/home
-              mkdir -p /home/runner
-      
-          - name: Build and Push Image
-            run: |
-              # Docker authentication
-              mkdir -p /kaniko/.docker
-              cat <<EOF > /kaniko/.docker/config.json
-              {
-                  "auths": {
-                      "ghcr.io": {
-                          "auth": "$(echo -n "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | base64 -w0)"
-                      }
+  build:
+    runs-on: robopd2-runners
+    container:
+      image: gcr.io/kaniko-project/executor:v1.20.0-debug
+    
+    steps:
+      - name: Diagnose Runner
+        run: |
+          echo "Debugging Runner Configuration"
+          pwd
+          ls -la
+          env | grep -E "RUNNER|GITHUB"
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Build Docker Image
+        run: |
+          # Simplified Kaniko build process
+          mkdir -p /kaniko/.docker
+          cat <<EOF > /kaniko/.docker/config.json
+          {
+              "auths": {
+                  "ghcr.io": {
+                      "auth": "$(echo -n "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | base64 -w0)"
                   }
               }
-              EOF
-      
-              /kaniko/executor \
-                  --dockerfile=./Dockerfile \
-                  --context=. \
-                  --destination="ghcr.io/$IMAGE_NAME:${GITHUB_SHA::7}" \
-                  ${{ env.KANIKO_CACHE_ARGS }} \
-                  --push-retry 5
-            env:
-              IMAGE_NAME: "robopd2/robopd2-web"
-              GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-              GH_REGISTRY: "ghcr.io"
-              GIT_USERNAME: ${{ github.actor }}
-  
-    deploy-production:
-      needs: build
-      if: github.ref == 'refs/heads/main'
-      runs-on: robopd2-runners
-      steps:
+          }
+          EOF
+
+          /kaniko/executor \
+              --dockerfile=./Dockerfile \
+              --context=. \
+              --destination="${GH_REGISTRY}/${IMAGE_NAME}:${GITHUB_SHA::7}" \
+              --cache=true \
+              --cache-copy-layers=true \
+              --cache-ttl=24h \
+              --push-retry 5
+
+  deploy-production:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: robopd2-runners
+    steps:
       - uses: actions/checkout@v4
       
       - name: Setup Helm
@@ -83,7 +71,7 @@ jobs:
         uses: azure/k8s-set-context@v3
         with:
           method: kubeconfig
-          kubeconfig: ${{ env.KUBE_CONFIG }}
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
       
       - name: Deploy to Production
         run: |
